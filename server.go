@@ -58,7 +58,7 @@ func main() {
 	log.Fatal(srv.ListenAndServe())
 }
 
-var tmpl = template.Must(template.New("name").Parse(`<!DOCTYPE html>
+const discoTemplateHTML = `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -66,13 +66,9 @@ var tmpl = template.Must(template.New("name").Parse(`<!DOCTYPE html>
     <meta name="ac-discovery-pubkeys" content="{{.PrefixMatch}} {{.PubkeysURL}}">
   <head>
 <html>
-`))
+`
 
-type entry struct {
-	PrefixMatch    string
-	ACITemplateURL string
-	PubkeysURL     string
-}
+var discoTemplate = template.Must(template.New("disco").Parse(discoTemplateHTML))
 
 func handleDiscoverFunc(domain string, ir ImageRepo, kr KeyRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -82,13 +78,17 @@ func handleDiscoverFunc(domain string, ir ImageRepo, kr KeyRepo) http.HandlerFun
 		}
 
 		name := path.Base(r.URL.Path)
-		meta := entry{
+		data := struct {
+			PrefixMatch    string
+			ACITemplateURL string
+			PubkeysURL     string
+		}{
 			PrefixMatch:    fmt.Sprintf("%s/%s", domain, name),
 			ACITemplateURL: ir.URL(name),
 			PubkeysURL:     kr.URL(),
 		}
 
-		if err := tmpl.Execute(w, meta); err != nil {
+		if err := discoTemplate.Execute(w, data); err != nil {
 			log.Printf("Failed serving metadata: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
