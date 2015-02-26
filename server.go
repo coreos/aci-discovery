@@ -13,6 +13,10 @@ import (
 	"text/template"
 )
 
+const (
+	VERSION = "0.0.0+git"
+)
+
 func main() {
 	// don't need timestamps running under systemd
 	log.SetFlags(0)
@@ -22,9 +26,15 @@ func main() {
 	listen := fs.String("listen", "0.0.0.0:80", "IP & port to bind")
 	imagesURL := fs.String("images", "file:///opt/aci/images", "")
 	keysURL := fs.String("keys", "file:///opt/aci/pubkeys.gpg", "")
+	version := fs.Bool("version", false, "print version information and exit")
 
 	if err := fs.Parse(os.Args[1:]); err != nil {
 		log.Fatalf("Failed parsing flags: %v", err)
+	}
+
+	if *version {
+		fmt.Printf("aci-discovery version %s\n", VERSION)
+		os.Exit(0)
 	}
 
 	if *domain == "" {
